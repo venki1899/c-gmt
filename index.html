@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Compliant GMT</title>
+<meta name="description" content="C-GMT makes a general motion tracker compliant with a residual adapter: one policy, any motion, safer to be around. Real-world results on a Unitree G1.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://venki1899.github.io/c-gmt/">
+<meta property="og:title" content="Compliant GMT: Making General Motion Tracking Compliant via Residual Reference Adaptation">
+<meta property="og:description" content="C-GMT makes a general motion tracker compliant with a residual adapter: one policy, any motion, safer to be around. Real-world results on a Unitree G1.">
+<meta property="og:image" content="https://venki1899.github.io/c-gmt/rsc/preview.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<style>img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+/* Layout follows the academic project-page convention: a fixed crimson bar, one centred column
+   capped near 800px, justified prose, and h4 section headings over rules. Colours and the system
+   font stack match that convention rather than introducing a separate identity. */
+:root {
+  --bg:       #ffffff;
+  --fg:       #212529;
+  --muted:    #6c757d;
+  --rule:     #dee2e6;
+  --surface:  #f8f9fa;
+  --link:     #0062cc;
+  --brand:    #a31f34;
+  --brand-fg: #ffffff;
+  --btn:      #343a40;
+  --logo-bg:  transparent;   /* the page is white, so the logos need nothing behind them */
+  --brand-ink: #a31f34;      /* the crimson, for type */
+
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  --col: 1140px;      /* Bootstrap's container at xl, which is what the reference page uses */
+  --media: 720px;
+  --narrow: 640px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:      #16191c;
+    --fg:      #e6e8ea;
+    --muted:   #9aa1a8;
+    --rule:    #2e3338;
+    --surface: #1d2126;
+    --link:    #6ea8fe;
+    --brand:   #8d1b2d;
+    --brand-fg:#ffffff;
+    --btn:     #2b3137;
+    --logo-bg: #ffffff;
+    --brand-ink: #f08a99;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:      #16191c;
+  --fg:      #e6e8ea;
+  --muted:   #9aa1a8;
+  --rule:    #2e3338;
+  --surface: #1d2126;
+  --link:    #6ea8fe;
+  --brand:   #8d1b2d;
+  --brand-fg:#ffffff;
+  --btn:     #2b3137;
+  --logo-bg: #ffffff;
+  --brand-ink: #f08a99;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+  background: var(--brand);
+  padding: 8px 0;
+  padding-top: calc(8px + env(safe-area-inset-top, 0px));
+}
+.navbar .inner {
+  /* full width on purpose: the reference page's navbar is not inside its container, so the brand
+     sits at the left edge of the viewport and the links at the right, not clustered in the middle */
+  width: 100%; padding-inline: 16px;
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+}
+.navbar a { color: var(--brand-fg); text-decoration: none; font-size: .95rem; opacity: .85; }
+.navbar a:hover { opacity: 1; }
+.navbar .brand { font-weight: 600; font-size: 1.05rem; opacity: 1; margin-right: auto; }
+
+.container { max-width: var(--col); margin: 0 auto; padding-inline: 20px; font-size: 20px; }
+.hero { padding-top: 96px; text-align: center; }
+/* Prose runs the full container width, justified and flush left, so every paragraph starts on the
+   same line as the heading above it. The 720px caps in the reference page are on its videos. */
+
+h2.title {
+  font-size: clamp(1.6rem, 3.8vw, 2.3rem);
+  font-weight: 600; line-height: 1.25; text-wrap: balance;
+  margin: 0 0 14px;
+}
+.authors {
+  font-size: 1.05rem; margin: 0 0 4px;
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 28px;
+}
+.authors a { color: inherit; }
+/* The lab logos, as on SoftMimic: 80px wide, side by side between the authors and the buttons.
+   In the dark theme each sits on a white chip -- the Improbable AI mark is a JPEG on white, and the
+   CSAIL letters are cut-outs that would otherwise show the dark page through them. */
+.logos { display: flex; justify-content: center; align-items: center; gap: 56px; margin: 14px 0 18px; }
+.logos img { display: block; width: 80px; height: auto; background: var(--logo-bg); padding: 5px; border-radius: 6px; }
+.venue { color: var(--muted); font-size: .95rem; margin: 0 0 18px; }
+
+.buttons { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--btn); color: #fff; text-decoration: none;
+  font-size: .92rem; padding: 7px 17px; border-radius: 999px;
+}
+.btn:hover { background: var(--brand); }
+.btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+h4.section {
+  font-size: 1.5rem; font-weight: 600; margin: 0 0 6px;
+  padding-top: 70px; margin-top: -40px;
+}
+/* Subsection headings sit centred over the centred media, the title in the body face at a size
+   between the section label and the prose, with what kind of section it is -- the problem, prior
+   work, our approach, a result -- set as a small label above it in the brand colour. */
+h5.sub {
+  text-align: center; text-wrap: balance;
+  font-size: 1.45rem; font-weight: 650; line-height: 1.3; letter-spacing: -.01em;
+  margin: 26px auto 14px;   /* no width cap: the widest title is ~690px, so each sits on one line */
+}
+h5.sub .kicker {
+  display: block; margin-bottom: 6px;
+  font-size: .74rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--brand-ink);
+}
+hr.subrule { margin: 44px 0 0; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 0 0 14px; }
+
+p { margin: 0 0 1rem; }
+.justify { text-align: justify; }
+a { color: var(--link); }
+
+figure { margin: 16px auto 0; max-width: var(--media); }
+figure.wide { max-width: 800px; }   /* their teaser and diagram cap here, not at the container */
+figure.hero-vid { max-width: 1060px; margin-top: 22px; }   /* the thread video carries type: give it the column */
+figure.narrow { max-width: var(--narrow); }
+img.fig.plot { max-width: 430px; margin-inline: auto; }
+figure.full { max-width: none; }   /* a single clip that has to share its edges with a full-width row */
+video.vid, img.fig {
+  display: block; width: 100%; height: auto;
+  border-radius: 4px; background: #0e1114;
+}
+img.fig { background: transparent; }
+figcaption { font-size: .88rem; color: var(--muted); margin-top: 8px; text-align: center; }
+figcaption b { color: var(--fg); font-weight: 600; }
+p.cap { font-size: .88rem; color: var(--muted); margin: 8px 0 0; text-align: center; }
+
+.pair, .trio { max-width: var(--col); margin-inline: auto; }
+/* Each cell grows in proportion to its clip's aspect ratio, so every clip in a row renders at the
+   same height and the row's top and bottom edges are flush. Equal-width columns cannot do this:
+   with a portrait clip beside a landscape one, one of them always ends up boxed with empty space. */
+.pair, .trio { display: flex; gap: 14px; align-items: flex-start; }
+.pair > div, .trio > div { min-width: 0; flex: 1 1 0; }
+.pair figure, .trio figure { margin-top: 0; max-width: none; }
+/* Clips in a row share one box so they take the same vertical space whatever their own aspect:
+   the captures mix 16:9, 9:16 and square-ish, and left at natural height a portrait clip next to
+   a landscape one makes the row ragged. contain, so nothing is cropped to achieve it. */
+
+.frame { position: relative; }
+.tag {
+  position: absolute; left: 8px; top: 8px;
+  font-family: var(--mono); font-size: .68rem;
+  background: rgba(0,0,0,.7); color: #fff; padding: 3px 7px; border-radius: 3px;
+}
+
+pre.bib {
+  font-family: var(--mono); font-size: .8rem; line-height: 1.55;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 14px 16px; overflow-x: auto; margin: 12px 0 0; text-align: left;
+}
+
+body { padding-bottom: 64px; }   /* the room the footer used to give the end of the page */
+footer {
+  border-top: 1px solid var(--rule); margin-top: 48px;
+  padding-block: 24px 48px; color: var(--muted); font-size: .88rem; text-align: center;
+}
+
+@media (max-width: 680px) {
+  .pair, .trio { flex-direction: column; }
+  .justify { text-align: left; }   /* justified type in a phone-width column opens wide gaps between words */
+  .pair > div, .trio > div { flex: none !important; }
+  .hero { padding-top: 84px; }
+  h4.section { padding-top: 60px; margin-top: -30px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="navbar">
+  <div class="inner">
+    <a class="brand" href="#top">C-GMT</a>
+    <a href="#abstract">Abstract</a>
+    <a href="#overview">Overview</a>
+    <a href="#paper">Paper</a>
+    <a href="#" id="theme">Theme</a>
+  </div>
+</div>
+
+<div class="container hero" id="top">
+  <h2 class="title">Compliant GMT: Making General Motion Tracking Compliant via Residual Reference Adaptation</h2>
+  <p class="authors">
+    <a href="https://www.linkedin.com/in/venkateshkrishna-vp/" target="_blank" rel="noopener">Venki Parsuram</a>
+    <a href="https://www.linkedin.com/in/mwangjoy/" target="_blank" rel="noopener">Michelle Wang</a>
+    <span>Jin-Hyuk Hong</span>
+    <a href="https://people.csail.mit.edu/pulkitag/" target="_blank" rel="noopener">Pulkit Agrawal</a>
+  </p>
+  <div class="logos">
+    <a href="https://www.csail.mit.edu/" target="_blank" rel="noopener"><img src="rsc/CSAIL_Primary_Regular_RGB.png" alt="MIT CSAIL"></a>
+    <a href="https://people.csail.mit.edu/pulkitag/" target="_blank" rel="noopener"><img src="rsc/IAI_Logo.jpg" alt="Improbable AI"></a>
+  </div>
+  <div class="buttons">
+    <a class="btn" href="c-gmt.pdf" target="_blank" rel="noopener">
+      <svg viewBox="0 0 16 16"><path d="M3 0h6.4L13 3.6V16H3V0zm1 1v14h8V4.5H8.5V1H4z"/></svg>
+      Paper
+    </a>
+    <a class="btn" aria-disabled="true" href="#">
+      <svg viewBox="0 0 16 16"><path d="M5.5 11.5 2 8l3.5-3.5.9.9L3.8 8l2.6 2.6-.9.9zm5 0-.9-.9L12.2 8 9.6 5.4l.9-.9L14 8l-3.5 3.5z"/></svg>
+      Code (soon)
+    </a>
+  </div>
+
+  <figure class="hero-vid">
+    <video class="vid" src="v/hero.mp4" autoplay muted loop playsinline controls preload="metadata"></video>
+    <figcaption><b>C-GMT on a Unitree G1.</b> One policy. Any motion. Safer to be around. All videos are shown at 1&times; speed.</figcaption>
+  </figure>
+</div>
+
+<div class="container">
+  <h4 class="section" id="abstract">Abstract</h4>
+  <hr>
+  <p class="justify">We propose Compliant GMT (C-GMT), a modular framework for full-body compliant responses in general motion tracking. As humanoid robots move into real world deployment, they not only need to perform any motion but also respond safely and robustly to interaction forces. Existing general motion tracking policies can imitate diverse motions but are trained to be stiff, leading to unexpected and unsafe behaviors under disturbance. Prior work in compliant humanoid control trades off compliance and generality. There exist examples of full-body compliant responses, but these are heavily curated to single-reference policies. On the other hand, general motion trackers (GMT) are trained to rigidly imitate massive motion capture datasets. Our key insight is to leverage the generality of pretrained GMTs for motion tracking while introducing compliance from a residual adapter that conditions on a history of proprioception. This enables our approach, C-GMT, to achieve both general motion tracking and whole-body compliant responses. Compared to state-of-the-art general motion trackers and single-motion compliant policies, C-GMT demonstrates competitive performance in both motion tracking accuracy and compliance adherence. We further demonstrate improved safety, robustness, and error tolerance in simulation and real-world G1 experiments.</p>
+
+  <h4 class="section" id="overview">Overview</h4>
+  <hr>
+
+  <h5 class="sub"><span class="kicker">The problem</span>General motion trackers are trained to be stiff</h5>
+  <p class="justify">General motion trackers are trained to closely follow reference motions, even under external disturbances, making them stiff. While this enables accurate motion tracking, it can also cause robots to resist unexpected contact, exerting large forces instead of yielding.</p>
+  <div class="pair">
+    <div style="flex-grow:1.3972">
+      <figure>
+        <video class="vid" src="v/jenga_stiff_short.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>At high stiffness, the robot resists contact rather than yielding, knocking over the tower.</figcaption>
+      </figure>
+    </div>
+    <div style="flex-grow:0.6644">
+      <figure>
+        <video class="vid" src="v/stiff_dancing.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>Held mid-dance, the stiff policy fights the hand instead of giving way.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Prior work</span>Existing compliant controllers trade off generality and compliance</h5>
+  <p class="justify">Existing approaches to compliant humanoid control face a tradeoff between generality and compliance. Methods that achieve whole-body compliant responses are limited to individual motions or simplified motion commands, while general motion trackers with compliance restrict their responses to the upper body.</p>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Our approach</span>Formulate compliance as a reference adaptation problem</h5>
+  <p class="justify">We distill the compliance into a residual adapter, preserving the generality of a pretrained motion tracker while enabling whole-body compliant responses.</p>
+  <figure class="wide">
+    <img class="fig" src="method.png" alt="C-GMT method diagram. Top row: a privileged teacher takes a reference motion through a compliance IK solve, using the true force and commanded stiffness, to produce a compliant reference, then through a frozen force-robust GMT to the teacher action. Bottom row: the student feeds reference motion and proprioception into a residual adapter, sums the residual into the reference, and passes it to the same frozen tracker, with the adapter trained to match the teacher's action.">
+    <figcaption><b>Teacher above, student below.</b> The teacher uses the true contact force to compute a compliant reference. The student learns the same correction from proprioception alone and passes it to the same frozen tracker.</figcaption>
+  </figure>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Result</span>Track any motion</h5>
+  <p class="justify">Compliance without sacrificing generality. C-GMT tracks diverse, dynamic whole-body motions, from teleoperation to dance.</p>
+  <div class="pair">
+    <div style="flex-grow:0.9396">
+      <figure>
+        <video class="vid" src="v/track_any.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>Whole-body teleoperation.</figcaption>
+      </figure>
+    </div>
+    <div style="flex-grow:0.5625">
+      <figure>
+        <video class="vid" src="v/salsa.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>Salsa, from a reference motion.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Result</span>Be safe while being dynamic</h5>
+  <p class="justify">Even during fast, dynamic motion, C-GMT gives way when someone holds or pulls on it. A stiff tracker on the same motion fights back.</p>
+  <div class="pair sync">
+    <div style="flex-grow:0.9396">
+      <figure>
+        <div class="frame">
+          <video class="vid" src="v/dance_cgmt.mp4" autoplay muted playsinline preload="metadata"></video>
+          <span class="tag">C-GMT (ours)</span>
+        </div>
+      </figure>
+    </div>
+    <div style="flex-grow:0.9396">
+      <figure>
+        <div class="frame">
+          <video class="vid" src="v/dance_stiff.mp4" autoplay muted playsinline preload="metadata"></video>
+          <span class="tag">Stiff</span>
+        </div>
+      </figure>
+    </div>
+  </div>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Result</span>C-GMT allows accurate, adjustable compliance</h5>
+  <p class="justify">Different tasks require different levels of compliance. C-GMT enables adjustable robot stiffness while accurately achieving the desired response.</p>
+  <div class="pair flat sync">
+    <div style="flex-grow:1.3972">
+      <figure>
+        <div class="frame">
+          <video class="vid" src="v/jenga_compliant.mp4" autoplay muted playsinline preload="metadata"></video>
+          <span class="tag">k = 60</span>
+        </div>
+        <figcaption>Low stiffness: the arm yields to the tower and leaves it standing.</figcaption>
+      </figure>
+    </div>
+    <div style="flex-grow:1.3972">
+      <figure>
+        <div class="frame">
+          <video class="vid" src="v/jenga_stiff.mp4" autoplay muted playsinline preload="metadata"></video>
+          <span class="tag">k = 600</span>
+        </div>
+        <figcaption>High stiffness: the same policy holds position and pushes through.</figcaption>
+      </figure>
+    </div>
+  </div>
+  <figure class="narrow">
+    <img class="fig plot" src="stiffness.png" alt="Plot of measured stiffness against commanded stiffness, showing the measured response following the commanded value across the range.">
+    <figcaption>Measured vs. commanded stiffness for a standing motion. C-GMT, a single general motion-tracking policy, achieves stiffness adherence comparable to SoftMimic, trained specifically for the standing motion. Dashed line: ideal adherence.</figcaption>
+  </figure>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Result</span>C-GMT improves safety and robustness</h5>
+  <p class="justify">C-GMT improves safety and robustness, allowing the robot to yield to unexpected pushes and pulls and continue performing its task.</p>
+  <div class="trio">
+    <div style="flex-grow:0.7417">
+      <figure>
+        <video class="vid" src="v/walk_push.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </figure>
+    </div>
+    <div style="flex-grow:1.5639">
+      <figure>
+        <video class="vid" src="v/dishwasher_full.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </figure>
+    </div>
+    <div style="flex-grow:0.6583">
+      <figure>
+        <video class="vid" src="v/drawer.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </figure>
+    </div>
+  </div>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Result</span>Compliance helps manipulation</h5>
+  <p class="justify">Compliance can also improve manipulation, making robots more robust to controller errors and enabling contact-rich tasks like opening doors and inserting objects.</p>
+  <div class="trio">
+    <div style="flex-grow:1.2889">
+      <figure>
+        <video class="vid" src="v/dishwasher_close.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>Pushing in a misaligned tray.</figcaption>
+      </figure>
+    </div>
+    <div style="flex-grow:0.6835">
+      <figure>
+        <video class="vid" src="v/insertion2.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>Compliant search and insert in a movable block.</figcaption>
+      </figure>
+    </div>
+    <div style="flex-grow:1.3417">
+      <figure>
+        <video class="vid" src="v/oven_open.mp4" autoplay muted loop playsinline preload="metadata"></video>
+        <figcaption>Opening articulated objects.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <hr class="subrule"><h5 class="sub"><span class="kicker">Result</span>C-GMT enables natural and fun physical interactions</h5>
+  <p class="justify">C-GMT makes physical interaction more natural, whether you're moving the robot out of the way or simply having fun interacting with it.</p>
+  <figure class="full">
+    <video class="vid" src="v/cleaning.mp4" autoplay muted loop playsinline preload="metadata"></video>
+    <figcaption>Moving the robot out of the way while it wipes the counter.</figcaption>
+  </figure>
+  <div class="trio" style="margin-top:14px">
+    <div style="flex-grow:0.9583">
+      <figure>
+        <video class="vid" src="v/play_push.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </figure>
+    </div>
+    <div style="flex-grow:1.3333">
+      <figure>
+        <video class="vid" src="v/play_pull.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </figure>
+    </div>
+    <div style="flex-grow:0.6583">
+      <figure>
+        <video class="vid" src="v/play_dance.mp4" autoplay muted loop playsinline preload="metadata"></video>
+      </figure>
+    </div>
+  </div>
+  <p class="cap">Push it, pull it, play with it.</p>
+
+  <h4 class="section" id="paper">Paper</h4>
+  <hr>
+  <p><b>Compliant GMT: Making General Motion Tracking Compliant via Residual Reference Adaptation</b><br>
+     Venki Parsuram, Michelle Wang, Jin-Hyuk Hong, Pulkit Agrawal</p>
+  <pre class="bib">@misc{cgmt2026,
+  title   = {Compliant GMT: Making General Motion Tracking
+             Compliant via Residual Reference Adaptation},
+  author  = {Parsuram, Venki and Wang, Michelle and Hong, Jin-Hyuk and Agrawal, Pulkit},
+  year    = {2026}
+}</pre>
+
+  <h4 class="section" id="acknowledgments">Acknowledgments</h4>
+  <hr>
+  <p class="justify">This research was financially supported by the Ministry of Trade, Industry, and Energy (MOTIE), Korea, under the &ldquo;Global Industrial Technology Cooperation Center program&rdquo; supervised by the Korea Institute for Advancement of Technology (KIAT) (Grant No. P0028435).</p>
+</div>
+
+
+<script>
+(function () {
+  var root = document.documentElement, key = "cgmt-theme";
+  try { var s = localStorage.getItem(key); if (s) root.setAttribute("data-theme", s); } catch (e) {}
+  var b = document.getElementById("theme");
+  if (b) b.addEventListener("click", function (e) {
+    e.preventDefault();
+    var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var cur = root.getAttribute("data-theme") || (dark ? "dark" : "light");
+    var next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(key, next); } catch (e2) {}
+  });
+  // A dozen looping videos decoding at once stalls weak machines; keep only what is on screen.
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        var v = en.target;
+        if (en.isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else v.pause();
+      });
+    }, { rootMargin: "250px 0px" });
+    // synchronised pairs are driven by their own group observer below, not one clip at a time
+    document.querySelectorAll("video").forEach(function (v) {
+      if (!v.closest(".sync")) io.observe(v);
+    });
+  }
+  // A synchronised pair: these two are the same motion at two commanded stiffnesses, so the
+  // comparison only works if they are at the same point of the motion. Left to loop on their own
+  // they drift apart within seconds, because the clips are 7.6 s and 6.4 s. The longer clip is the
+  // clock: when it ends, both return to zero together, and the shorter one holds its last frame
+  // until then.
+  document.querySelectorAll(".sync").forEach(function (grp) {
+    var vs = Array.prototype.slice.call(grp.querySelectorAll("video"));
+    if (!vs.length) return;
+    function restart() {
+      vs.forEach(function (v) {
+        try { v.currentTime = 0; } catch (e) {}
+        var p = v.play(); if (p && p.catch) p.catch(function () {});
+      });
+    }
+    var armed = false;
+    function arm() {
+      if (armed || vs.some(function (v) { return !v.duration; })) return;
+      armed = true;
+      var clock = vs.reduce(function (a, b) { return b.duration > a.duration ? b : a; });
+      clock.addEventListener("ended", restart);
+    }
+    vs.forEach(function (v) { v.addEventListener("loadedmetadata", arm); });
+    arm();
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (es) {
+        es.forEach(function (en) {
+          if (en.isIntersecting) restart();
+          else vs.forEach(function (v) { v.pause(); });
+        });
+      }, { rootMargin: "200px 0px" }).observe(grp);
+    }
+  });
+})();
+</script>
+</body>
+</html>
